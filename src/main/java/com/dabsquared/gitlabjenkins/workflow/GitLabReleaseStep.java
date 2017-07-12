@@ -2,10 +2,7 @@ package com.dabsquared.gitlabjenkins.workflow;
 
 import com.dabsquared.gitlabjenkins.cause.GitLabWebHookCause;
 import com.dabsquared.gitlabjenkins.gitlab.api.GitLabApi;
-import com.dabsquared.gitlabjenkins.gitlab.api.model.Branch;
-import com.dabsquared.gitlabjenkins.gitlab.api.model.BuildState;
 import com.dabsquared.gitlabjenkins.gitlab.api.model.Tag;
-import com.dabsquared.gitlabjenkins.util.CommitStatusUpdater;
 import hudson.Extension;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -14,9 +11,12 @@ import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.export.ExportedBean;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,32 +31,36 @@ public class GitLabReleaseStep extends AbstractStepImpl {
     private static final Logger LOGGER = Logger.getLogger(GitLabReleaseStep.class.getName());
 
     private String tagSchema = "1.0.%";
-    private String artifactsFilePath = "";
-    private String changelogPath = "";
+    private String changelog = "";
     private Integer projectId = null;
+    private String ref = "master";
 
     @DataBoundConstructor
-    public GitLabReleaseStep(String tagSchema, String artifactsFilePath, String changelogPath, Integer projectId) {
+    public GitLabReleaseStep(String tagSchema, String changelog, Integer projectId, String ref) {
         this.tagSchema = StringUtils.isEmpty(tagSchema) ? null : tagSchema;
-        this.artifactsFilePath = StringUtils.isEmpty(artifactsFilePath) ? null : artifactsFilePath;
-        this.changelogPath = StringUtils.isEmpty(changelogPath) ? null : changelogPath;
+        this.changelog = StringUtils.isEmpty(changelog) ? null : changelog;
         this.projectId = projectId;
+        this.ref = StringUtils.isEmpty(ref) ? "master" : ref;
     }
 
     public String getTagSchema() {
         return tagSchema;
     }
 
-    public String getArtifactsFilePath() {
-        return artifactsFilePath;
-    }
-
-    public String getChangelogPath() {
-        return changelogPath;
+    public String getChangelog() {
+        return changelog;
     }
 
     public Integer getProjectId() {
         return projectId;
+    }
+
+    public String getRef() {
+        return ref;
+    }
+
+    public void setRef(String ref) {
+        this.ref = ref;
     }
 
     public static class Execution extends AbstractSynchronousStepExecution<Void> {
@@ -80,26 +84,41 @@ public class GitLabReleaseStep extends AbstractStepImpl {
                      projectId = cause.getData().getTargetProjectId();
                 }
 
-                println("Accessing projectId " + projectId);
-
-                // TODO This should be parameter as well (Being able to switch to a external projectId)
                 if (projectId != null) {
-                        GitLabApi client = getClient(run);
-                        if (client == null) {
-                            println("No GitLab connection configured");
-                        } else {
-                            println("Beginning with release process");
 
-                            for (Tag tag : client.getTags(projectId)) {
-                                println("Tags: " + tag);
+                    List<String> tagList = new ArrayList<String>();
+
+                    GitLabApi client = getClient(run);
+                    if (client == null) {
+                        println("No GitLab connection configured");
+                    } else {
+                        println("Beginning with release process");
+
+                        for (Tag tag : client.getTags(projectId)) {
+                            println("Name" + tag.getName());
+                            if (tag.getName().matches(step.getTagSchema())) {
+                                tagList.add(tag.getName());
+                                println("Added this tag");
                             }
-
-                            // Create new tag
-                            client.createNewTag(projectId, "master", "1.0.3", null, null);
-
-                            client.createNewRelease(projectId, "1.0.3", "* My amaizing changes ....!!!!\n* Test 2");
                         }
+                    }
 
+                    // Sort the collections
+
+
+                    if (tagList.size() == 0) {
+                        println("No matching tag-name found");
+                    } else {
+                        Collections.sort(tagList);
+
+                        println("Last entry is : " + tagList.get(0));
+                        println("Last entry is : " + tagList.get(tagList.size()-1));
+
+                        // "split" by "."
+                        //String newTag = generateTag(latestTag);
+                        //client.createNewTag(projectId, step.getRef(), newTag, null, null);
+                        //client.createNewRelease(projectId, newTag, step.getChangeLog());
+                    }
                 } else {
                     println("Project Id missing");
                 }
