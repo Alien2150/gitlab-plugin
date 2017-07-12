@@ -1,12 +1,8 @@
 package com.dabsquared.gitlabjenkins.gitlab.api;
 
-import com.dabsquared.gitlabjenkins.gitlab.api.model.Branch;
-import com.dabsquared.gitlabjenkins.gitlab.api.model.BuildState;
-import com.dabsquared.gitlabjenkins.gitlab.api.model.Label;
-import com.dabsquared.gitlabjenkins.gitlab.api.model.MergeRequest;
-import com.dabsquared.gitlabjenkins.gitlab.api.model.Project;
-import com.dabsquared.gitlabjenkins.gitlab.api.model.User;
+import com.dabsquared.gitlabjenkins.gitlab.api.model.*;
 import com.dabsquared.gitlabjenkins.gitlab.hook.model.State;
+import org.jboss.resteasy.annotations.Form;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -136,6 +132,29 @@ public interface GitLabApi {
     @Path("/projects/{projectId}/repository/branches/{branch}")
     Branch getBranch(@PathParam("projectId") String projectId,
                      @PathParam("branch") String branch);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/projects/{projectId}/repository/tags")
+    List<Tag> getTags(@PathParam("projectId") Integer projectId);
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Path("/projects/{projectId}/repository/tags")
+    void createNewTag(@PathParam("projectId") Integer projectId,
+                      @FormParam("ref") String ref,
+                      @FormParam("tag_name") String tagName,
+                      @FormParam("message") String message,
+                      @FormParam("release_description") String releaseDescription);
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Path("/projects/{projectId}/repository/tags/{tagName}/release")
+    void createNewRelease(@PathParam("projectId") Integer projectId,
+                          @PathParam("tagName") String tagName,
+                          @FormParam("description") String description);
 
     @HEAD
     @Produces(MediaType.APPLICATION_JSON)
