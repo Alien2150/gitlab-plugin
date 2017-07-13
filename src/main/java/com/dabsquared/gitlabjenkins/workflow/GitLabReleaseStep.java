@@ -13,12 +13,10 @@ import org.kohsuke.stapler.export.ExportedBean;
 
 import javax.inject.Inject;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import static com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty.getClient;
 
@@ -34,13 +32,15 @@ public class GitLabReleaseStep extends AbstractStepImpl {
     private String changelog = "";
     private Integer projectId = null;
     private String ref = "master";
+    private String schemaSeparator = ".";
 
     @DataBoundConstructor
-    public GitLabReleaseStep(String tagSchema, String changelog, Integer projectId, String ref) {
-        this.tagSchema = StringUtils.isEmpty(tagSchema) ? null : tagSchema;
-        this.changelog = StringUtils.isEmpty(changelog) ? null : changelog;
+    public GitLabReleaseStep(String tagSchema, String changelog, Integer projectId, String ref, String schemaSeperator) {
+        this.tagSchema = StringUtils.isEmpty(tagSchema) ? "(.*)" : tagSchema;
+        this.changelog = StringUtils.isEmpty(changelog) ? "" : changelog;
         this.projectId = projectId;
         this.ref = StringUtils.isEmpty(ref) ? "master" : ref;
+        this.schemaSeparator = StringUtils.isEmpty(schemaSeperator) ? "." : schemaSeperator;
     }
 
     public String getTagSchema() {
@@ -59,9 +59,7 @@ public class GitLabReleaseStep extends AbstractStepImpl {
         return ref;
     }
 
-    public void setRef(String ref) {
-        this.ref = ref;
-    }
+    public String getSchemaSeparator() { return schemaSeparator; }
 
     public static class Execution extends AbstractSynchronousStepExecution<Void> {
         private static final long serialVersionUID = 1;
@@ -86,19 +84,15 @@ public class GitLabReleaseStep extends AbstractStepImpl {
 
                 if (projectId != null) {
 
-                    List<String> tagList = new ArrayList<String>();
+                    ArrayList<String> tagList = new ArrayList<String>();
 
                     GitLabApi client = getClient(run);
                     if (client == null) {
                         println("No GitLab connection configured");
                     } else {
-                        println("Beginning with release process");
-
                         for (Tag tag : client.getTags(projectId)) {
-                            println("Name" + tag.getName());
                             if (tag.getName().matches(step.getTagSchema())) {
                                 tagList.add(tag.getName());
-                                println("Added this tag");
                             }
                         }
                     }
@@ -109,15 +103,14 @@ public class GitLabReleaseStep extends AbstractStepImpl {
                     if (tagList.size() == 0) {
                         println("No matching tag-name found");
                     } else {
-                        Collections.sort(tagList);
+                        String newTag = generateTag(tagList);
+                        println("Generating new tag: " + newTag);
 
-                        println("Last entry is : " + tagList.get(0));
-                        println("Last entry is : " + tagList.get(tagList.size()-1));
+                        // First create a new tag
+                        client.createNewTag(projectId, step.getRef(), newTag, null, null);
 
-                        // "split" by "."
-                        //String newTag = generateTag(latestTag);
-                        //client.createNewTag(projectId, step.getRef(), newTag, null, null);
-                        //client.createNewRelease(projectId, newTag, step.getChangeLog());
+                        // Add the changelog / release notes to it
+                        client.createNewRelease(projectId, newTag, step.getChangelog());
                     }
                 } else {
                     println("Project Id missing");
@@ -128,6 +121,41 @@ public class GitLabReleaseStep extends AbstractStepImpl {
             }
 
             return null;
+        }
+
+        protected String generateTag(ArrayList<String> tagList) {
+            Collections.sort(tagList);
+            String latestTag = tagList.get(tagList.size()-1);
+            String[] chunks = latestTag.split(Pattern.quote(step.getSchemaSeparator()));
+            if (chunks.length == 0) {
+                println("Could not split the latest tag: " + latestTag);
+                return "";
+            }
+            String lastChunk = chunks[chunks.length - 1];
+            // Try to parse to number
+            try {
+                Integer lastChunkAsNumber = Integer.parseInt(lastChunk) + 1;
+                // Replace last chunk
+                chunks[chunks.length - 1] = lastChunkAsNumber.toString();
+
+                // JAVA 8 - version:
+                // return String.join(step.getSchemaSeparator(), Arrays.asList(chunks));
+
+                // Java 7 - version:
+                String res = "";
+                for (String chunk : chunks) {
+                    res += String.format("%s%s", chunk, step.getSchemaSeparator());
+                }
+
+                // Remove last character (".")
+                res = res.substring(0, res.length() - 1);
+
+                // Return joined string
+                return res;
+            } catch (NumberFormatException nfe) {
+                println("Not a number. Please use a valid tags in the repository like 1.0.0");
+                throw nfe;
+            }
         }
 
         private void println(String message) {
