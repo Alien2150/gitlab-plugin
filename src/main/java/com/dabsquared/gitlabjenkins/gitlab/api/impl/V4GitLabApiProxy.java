@@ -195,4 +195,27 @@ interface V4GitLabApiProxy extends GitLabApiProxy {
     @Path("/projects/{projectId}/pipelines")
     @Override
     List<Pipeline> getPipelines(@PathParam("projectId") String projectId);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/projects/{projectId}/repository/tags")
+    List<Tag> getTags(@PathParam("projectId") Integer projectId);
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Path("/projects/{projectId}/repository/tags")
+    void createNewTag(@PathParam("projectId") Integer projectId,
+                      @FormParam("ref") String ref,
+                      @FormParam("tag_name") String tagName,
+                      @FormParam("message") String message,
+                      @FormParam("release_description") String releaseDescription);
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Path("/projects/{projectId}/repository/tags/{tagName}/release")
+    void createNewRelease(@PathParam("projectId") Integer projectId,
+                          @PathParam("tagName") String tagName,
+                          @FormParam("description") String description);
 }
