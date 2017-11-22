@@ -117,4 +117,19 @@ class GitLabClientStub implements GitLabClient {
     public List<Pipeline> getPipelines(String projectName) {
         return null;
     }
+
+    @Override
+    public void createNewTag(Integer projectId, String ref, String tagName, String message, String releaseDescription) {
+
+    }
+
+    @Override
+    public void createNewRelease(Integer projectId, String tagName, String description) {
+
+    }
+
+    @Override
+    public List<Tag> getTags(Integer projectId) {
+        return null;
+    }
 }
