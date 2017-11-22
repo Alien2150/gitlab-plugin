@@ -1,5 +1,6 @@
 package com.dabsquared.gitlabjenkins.cause;
 
+import com.dabsquared.gitlabjenkins.gitlab.api.model.MergeRequest;
 import hudson.markup.EscapedMarkupFormatter;
 import jenkins.model.Jenkins;
 import net.karneim.pojobuilder.GeneratePojoBuilder;
@@ -8,10 +9,7 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-import java.util.AbstractMap;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -51,14 +49,24 @@ public final class CauseData {
     private final String lastCommit;
     private final String targetProjectUrl;
     private final String triggerPhrase;
+    private final String ref;
+    private final String beforeSha;
+    private final String isTag;
+    private final String sha;
+    private final String status;
+    private final String stages;
+    private final String createdAt;
+    private final String finishedAt;
+    private final String buildDuration;
 
     @GeneratePojoBuilder(withFactoryMethod = "*")
     CauseData(ActionType actionType, Integer sourceProjectId, Integer targetProjectId, String branch, String sourceBranch, String userName,
               String userEmail, String sourceRepoHomepage, String sourceRepoName, String sourceNamespace, String sourceRepoUrl,
               String sourceRepoSshUrl, String sourceRepoHttpUrl, String mergeRequestTitle, String mergeRequestDescription, Integer mergeRequestId,
-              Integer mergeRequestIid, Integer mergeRequestTargetProjectId, String targetBranch, String targetRepoName, String targetNamespace,
-              String targetRepoSshUrl, String targetRepoHttpUrl, String triggeredByUser, String before, String after, String lastCommit,
-              String targetProjectUrl, String triggerPhrase, String mergeRequestState, String mergedByUser, String mergeRequestAssignee) {
+              Integer mergeRequestIid, Integer mergeRequestTargetProjectId, String targetBranch, String targetRepoName, String targetNamespace, String targetRepoSshUrl,
+              String targetRepoHttpUrl, String triggeredByUser, String before, String after, String lastCommit, String targetProjectUrl,
+              String triggerPhrase, String mergeRequestState, String mergedByUser, String mergeRequestAssignee, String ref, String isTag,
+	            String sha, String beforeSha, String status, String stages, String createdAt, String finishedAt, String buildDuration) {
         this.actionType = checkNotNull(actionType, "actionType must not be null.");
         this.sourceProjectId = checkNotNull(sourceProjectId, "sourceProjectId must not be null.");
         this.targetProjectId = checkNotNull(targetProjectId, "targetProjectId must not be null.");
@@ -91,6 +99,15 @@ public final class CauseData {
         this.lastCommit = checkNotNull(lastCommit, "lastCommit must not be null");
         this.targetProjectUrl = targetProjectUrl;
         this.triggerPhrase = triggerPhrase;
+        this.ref = ref;
+        this.isTag = isTag;
+        this.sha = sha;
+        this.beforeSha = beforeSha;
+        this.status = status;
+        this.stages = stages;
+        this.createdAt = createdAt;
+        this.finishedAt = finishedAt;
+        this.buildDuration = buildDuration;
     }
 
     public Map<String, String> getBuildVariables() {
@@ -122,6 +139,15 @@ public final class CauseData {
         variables.put("gitlabTargetRepoHttpUrl", targetRepoHttpUrl);
         variables.put("gitlabBefore", before);
         variables.put("gitlabAfter", after);
+        variables.put("ref", ref);
+        variables.put("beforeSha", beforeSha);
+        variables.put("isTag", isTag);
+        variables.put("sha", sha);
+        variables.put("status", status);
+        variables.put("stages", stages);
+        variables.put("createdAt", createdAt);
+        variables.put("finishedAt", finishedAt);
+        variables.put("duration", buildDuration);
         variables.pufIfNotNull("gitlabTriggerPhrase", triggerPhrase);
         return variables;
     }
@@ -238,6 +264,25 @@ public final class CauseData {
         return targetProjectUrl;
     }
 
+    public String getRef() { return ref; }
+
+    public String getIsTag() { return isTag; }
+
+    public String getSha() { return sha; }
+
+    public String getBeforeSha() {return beforeSha; }
+
+    public String getStatus() { return status; }
+
+    public String getStages() { return stages; }
+
+    public String getCreatedAt() { return createdAt; }
+
+    public String getFinishedAt() { return finishedAt; }
+
+    public String getBuildDuration() { return buildDuration; }
+
+
     String getShortDescription() {
         return actionType.getShortDescription(this);
     }
@@ -254,7 +299,16 @@ public final class CauseData {
 		return mergeRequestAssignee;
 	}
 
-	@Override
+	public MergeRequest getMergeRequest() {
+        if (mergeRequestId == null) {
+            return null;
+        }
+
+        return new MergeRequest(mergeRequestId, mergeRequestIid, sourceBranch, targetBranch, mergeRequestTitle,
+            sourceProjectId, targetProjectId, mergeRequestDescription, mergeRequestState);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -295,6 +349,15 @@ public final class CauseData {
             .append(after, causeData.after)
             .append(lastCommit, causeData.lastCommit)
             .append(targetProjectUrl, causeData.targetProjectUrl)
+            .append(ref, causeData.getRef())
+            .append(isTag, causeData.getIsTag())
+            .append(sha, causeData.getSha())
+            .append(beforeSha, causeData.getBeforeSha())
+            .append(status, causeData.getStatus())
+            .append(stages, causeData.getStages())
+            .append(createdAt, causeData.getCreatedAt())
+            .append(finishedAt, causeData.getFinishedAt())
+            .append(buildDuration, causeData.getBuildDuration())
             .isEquals();
     }
 
@@ -332,6 +395,15 @@ public final class CauseData {
             .append(after)
             .append(lastCommit)
             .append(targetProjectUrl)
+            .append(ref)
+            .append(isTag)
+            .append(sha)
+            .append(beforeSha)
+            .append(status)
+            .append(stages)
+            .append(createdAt)
+            .append(finishedAt)
+            .append(buildDuration)
             .toHashCode();
     }
 
@@ -369,6 +441,15 @@ public final class CauseData {
             .append("after", after)
             .append("lastCommit", lastCommit)
             .append("targetProjectUrl", targetProjectUrl)
+            .append("ref", ref)
+            .append("isTag", isTag)
+            .append("sha", sha)
+            .append("beforeSha", beforeSha)
+            .append("status", status)
+            .append("stages", stages)
+            .append("createdAt", createdAt)
+            .append("finishedAt", finishedAt)
+            .append("duration", buildDuration)
             .toString();
     }
 
@@ -376,12 +457,12 @@ public final class CauseData {
         PUSH {
             @Override
             String getShortDescription(CauseData data) {
-                String pushedBy = data.getTriggeredByUser();
-                if (pushedBy == null) {
-                    return Messages.GitLabWebHookCause_ShortDescription_PushHook_noUser();
-                } else {
-                    return Messages.GitLabWebHookCause_ShortDescription_PushHook(pushedBy);
-                }
+                return getShortDescriptionPush(data);
+            }
+        }, TAG_PUSH {
+            @Override
+            String getShortDescription(CauseData data) {
+                return getShortDescriptionPush(data);
             }
         }, MERGE {
             @Override
@@ -405,18 +486,37 @@ public final class CauseData {
                 String forkNamespace = StringUtils.equals(data.getSourceNamespace(), data.getTargetBranch()) ? "" : data.getSourceNamespace() + "/";
                 if (Jenkins.getActiveInstance().getMarkupFormatter() instanceof EscapedMarkupFormatter || data.getTargetProjectUrl() == null) {
                     return Messages.GitLabWebHookCause_ShortDescription_NoteHook_plain(triggeredBy,
-                                                                                       String.valueOf(data.getMergeRequestIid()),
-                                                                                       forkNamespace + data.getSourceBranch(),
-                                                                                       data.getTargetBranch());
+                        String.valueOf(data.getMergeRequestIid()),
+                        forkNamespace + data.getSourceBranch(),
+                        data.getTargetBranch());
                 } else {
                     return Messages.GitLabWebHookCause_ShortDescription_NoteHook_html(triggeredBy,
-                                                                                      String.valueOf(data.getMergeRequestIid()),
-                                                                                      forkNamespace + data.getSourceBranch(),
-                                                                                      data.getTargetBranch(),
-                                                                                      data.getTargetProjectUrl());
+                        String.valueOf(data.getMergeRequestIid()),
+                        forkNamespace + data.getSourceBranch(),
+                        data.getTargetBranch(),
+                        data.getTargetProjectUrl());
                 }
             }
+        }, PIPELINE {
+                @Override
+                String getShortDescription(CauseData data) {
+                    String getStatus = data.getStatus();
+                    if (getStatus == null) {
+                       return Messages.GitLabWebHookCause_ShortDescription_PipelineHook_noStatus();
+                    } else {
+                      return Messages.GitLabWebHookCause_ShortDescription_PipelineHook(getStatus);
+                    }
+                }
         };
+
+        private static String getShortDescriptionPush(CauseData data) {
+            String pushedBy = data.getTriggeredByUser();
+            if (pushedBy == null) {
+                return Messages.GitLabWebHookCause_ShortDescription_PushHook_noUser();
+            } else {
+                return Messages.GitLabWebHookCause_ShortDescription_PushHook(pushedBy);
+            }
+        }
 
         abstract String getShortDescription(CauseData data);
     }
@@ -425,7 +525,7 @@ public final class CauseData {
 
         private final Map<K, V> map;
 
-        public MapWrapper(Map<K, V> map) {
+        MapWrapper(Map<K, V> map) {
             this.map = map;
         }
 
@@ -439,7 +539,7 @@ public final class CauseData {
             return map.entrySet();
         }
 
-        public void pufIfNotNull(K key, V value) {
+        void pufIfNotNull(K key, V value) {
             if (value != null) {
                 map.put(key, value);
             }

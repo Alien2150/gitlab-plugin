@@ -21,7 +21,7 @@
       <f:entry title="Comments" field="triggerOnNoteRequest">
         <f:checkbox default="true"/>
       </f:entry>
-      <f:entry title="Comment for triggering a build" help="/plugin/gitlab-plugin/help/help-noteRegex.html">
+      <f:entry title="Comment (regex) for triggering a build" help="/plugin/gitlab-plugin/help/help-noteRegex.html">
         <f:textbox field="noteRegex" default="Jenkins please retry a build"/>
       </f:entry>
     </table>
@@ -35,6 +35,9 @@
     </f:entry>
     <f:entry title="Set build description to build cause (eg. Merge request or Git Push )" field="setBuildDescription">
       <f:checkbox default="true"/>
+    </f:entry>
+    <f:entry title="Build on successful pipeline events" field="triggerOnPipelineEvent">
+      <f:checkbox default="false"/>
     </f:entry>
 
     <f:entry title="Allowed branches">

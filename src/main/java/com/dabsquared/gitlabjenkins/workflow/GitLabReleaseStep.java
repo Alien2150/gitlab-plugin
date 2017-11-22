@@ -1,7 +1,7 @@
 package com.dabsquared.gitlabjenkins.workflow;
 
 import com.dabsquared.gitlabjenkins.cause.GitLabWebHookCause;
-import com.dabsquared.gitlabjenkins.gitlab.api.GitLabApi;
+import com.dabsquared.gitlabjenkins.gitlab.api.GitLabClient;
 import com.dabsquared.gitlabjenkins.gitlab.api.model.Tag;
 import hudson.Extension;
 import hudson.model.Run;
@@ -86,7 +86,7 @@ public class GitLabReleaseStep extends AbstractStepImpl {
 
                     ArrayList<String> tagList = new ArrayList<String>();
 
-                    GitLabApi client = getClient(run);
+                    GitLabClient client = getClient(run);
                     if (client == null) {
                         println("No GitLab connection configured");
                     } else {
