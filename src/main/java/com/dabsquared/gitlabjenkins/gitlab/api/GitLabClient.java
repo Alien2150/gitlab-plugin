@@ -2,9 +2,6 @@ package com.dabsquared.gitlabjenkins.gitlab.api;
 
 import com.dabsquared.gitlabjenkins.gitlab.api.model.*;
 import com.dabsquared.gitlabjenkins.gitlab.hook.model.State;
-
-import javax.ws.rs.FormParam;
-import javax.ws.rs.PathParam;
 import java.util.List;
 
 public interface GitLabClient {
